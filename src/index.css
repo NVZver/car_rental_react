@@ -1,0 +1,32 @@
+.pick-up-location {
+  position: relative;
+  display: inline-block;
+}
+
+.pick-up-location__input {
+  border: 1px solid transparent;
+  background-color: #f1f1f1;
+  padding: 10px;
+  font-size: 16px;
+  width: 100%;
+}
+
+.autocomplete__items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+}
+
+.autocomplete__items div:hover {
+  background-color: #e9e9e9;
+}
+
+.autocomplete__item {
+  
+}
+
+.autocomplete-item--active {
+  background-color: blue !important;
+  color: #fff;
+}
