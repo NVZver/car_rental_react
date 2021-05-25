@@ -2,6 +2,59 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+class SearchListItem extends React.Component {
+  constructor(props){
+    super(props);
+    this.onClickHandler = this.onClickHandler.bind(this);
+  }
+
+  onClickHandler(){
+    this.props.onClickHandler(this.props.item);
+  }
+
+  render(){
+    return (
+      <div class="autocomplete__item"
+        onClick={this.onClickHandler}
+      >
+        {this.props.item.name}
+      </div>
+    )
+  }
+}
+
+class SearchList extends React.Component {
+  constructor(props){
+    super(props);
+
+    this.renderItems = this.renderItemsq.bind(this);
+    this.onItemClick = this.onItemClick.bind(this);
+  }
+
+  onItemClick(item){
+    this.props.onItemSelected(item);
+  }
+
+  renderItems(items = []){
+    return items.map(item=>
+      <SearchListItem 
+        item={item}
+        onClickHandler={this.onItemClick}
+      />
+    );
+  }
+
+  render(){
+    return(
+      <div id={this.props.idPrefix}
+        class="autocomplete__items"
+      >
+        {this.renderItems(this.props.items)}
+      </div>
+    )
+  }
+}
+
 class SearchInput extends React.Component{
   placeholder = 'Pick-up Location';
   
@@ -18,6 +71,8 @@ class SearchInput extends React.Component{
     this.closeLists = this.closeLists.bind(this);
     this.addActive = this.addActive.bind(this);
     this.removeActive = this.removeActive.bind(this);
+    this.createList = this.createList.bind(this);
+    this.createListItem = this.createListItem.bind(this);
   }
 
   async inputHandler(event){
@@ -27,24 +82,35 @@ class SearchInput extends React.Component{
       const role = event.target.dataset.role;
       const parentNode = event.target.parentNode;
       this.currentFocus = -1;
-      let elementAutocomlpleteList = document.createElement('div');
-      elementAutocomlpleteList.setAttribute('id', role + '__autocomplete-list');
-      elementAutocomlpleteList.setAttribute("class", "autocomplete__items");
-      parentNode.appendChild(elementAutocomlpleteList);
       const listItems = await this.getAutocompleteItems(value);
-      listItems.forEach((item)=>{
-        const elementAutocomlpleteListItem = document.createElement('div');
-        elementAutocomlpleteListItem.setAttribute("class", "autocomplete__item");
-        elementAutocomlpleteListItem.innerHTML = `${item.name}`;
-        elementAutocomlpleteListItem.innerHTML += `<input type="hidden" value="${item.name}" />`;
-        elementAutocomlpleteListItem.addEventListener("click", (selectedItem)=>{
-          event.target.value = selectedItem.target.getElementsByTagName('input')[0].value;
-          this.selectedItemData = item;
-          this.closeLists();
-        });
-        elementAutocomlpleteList.appendChild(elementAutocomlpleteListItem);
-      });
+      parentNode.appendChild(this.createList(role, listItems, event));
     }
+  }
+
+  createList(idPrefix, items = [], elementInput){
+    const list = document.createElement('ul');
+    list.setAttribute('id', idPrefix+'__autocomplete-list');
+    list.setAttribute("class", "autocomplete__items");
+    list.setAttribute("role", "listbox");
+    items.forEach(item=>{
+      const onItemClick = (selectedItem)=>{
+        elementInput.target.value = selectedItem.target.getElementsByTagName('input')[0].value;
+        this.selectedItemData = item;
+        this.closeLists();
+      };
+      list.appendChild(this.createListItem(item, onItemClick));
+    })
+    return list;
+  }
+
+  createListItem(item, onClick){
+    const listItem = document.createElement('li');
+    listItem.setAttribute('role', 'option');
+    listItem.setAttribute('class', 'autocomplete__item');
+    listItem.innerHTML = `${item.name}`;
+    listItem.innerHTML += `<input type="hidden" value="${item.name}" />`;
+    listItem.addEventListener('click', onClick);
+    return listItem;
   }
 
   closeLists(){
@@ -125,7 +191,7 @@ class SearchInput extends React.Component{
           className="pick-up-location__input"
           onInput={this.inputHandler}
           onKeyDown={this.keydownHandler}
-          onBlur={this.closeLists}
+          // onBlur={this.closeLists}
           type="search" 
           placeholder={this.placeholder}
           aria-describedby="pick-up-location-input__autocomplete-list"
