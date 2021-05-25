@@ -92,6 +92,7 @@ class SearchInput extends React.Component{
     list.setAttribute('id', idPrefix+'__autocomplete-list');
     list.setAttribute("class", "autocomplete__items");
     list.setAttribute("role", "listbox");
+
     items.forEach(item=>{
       const onItemClick = (selectedItem)=>{
         elementInput.target.value = selectedItem.target.getElementsByTagName('input')[0].value;
@@ -115,6 +116,7 @@ class SearchInput extends React.Component{
 
   closeLists(){
     const autocompleteItems = document.getElementsByClassName('autocomplete__items');
+    console.log(autocompleteItems);
     [].forEach.call(autocompleteItems, input=>{
       input.parentNode.removeChild(input)
     });
@@ -156,6 +158,7 @@ class SearchInput extends React.Component{
       this.currentFocus = elementsList.length -1;
     }
     elementsList[this.currentFocus].classList.add('autocomplete-item--active');
+    elementsList[this.currentFocus].setAttribute('id', 'selected_option');
   }
   /**
    * Removes active class from all of the passed elements
@@ -164,6 +167,7 @@ class SearchInput extends React.Component{
   removeActive(elementsList){
     elementsList.forEach(element=>{
       element.classList.remove('autocomplete-item--active');
+      element.setAttribute('id', '');
     })
   }
 
@@ -174,13 +178,7 @@ class SearchInput extends React.Component{
     url.searchParams.append('solrTerm', searchTerm);
     const response = await fetch(url);
     const data = await response.json();
-    console.log(data);
     return data.results.docs;
-  }
-
-  getAutocompleteItems1(value){
-    const autocompleteValues = ['qdrw', 'qdas', 'qdrw1'];
-    return autocompleteValues.filter(item=>item.substr(0, value.length).toLowerCase() === value.toLowerCase());
   }
 
   render(){
@@ -191,10 +189,15 @@ class SearchInput extends React.Component{
           className="pick-up-location__input"
           onInput={this.inputHandler}
           onKeyDown={this.keydownHandler}
-          // onBlur={this.closeLists}
+          onBlur={this.closeLists}
           type="search" 
           placeholder={this.placeholder}
           aria-describedby="pick-up-location-input__autocomplete-list"
+          aria-label={this.placeholder}
+          aria-expanded="true"
+          aria-autocomplete="list"
+          aria-owns="pick-up-location-input__autocomplete-list"
+          aria-activedescendant="selected_option"
         />
 
       </div>
