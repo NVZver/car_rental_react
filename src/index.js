@@ -7,6 +7,8 @@ class SearchInput extends React.Component{
   
   currentFocus = -1;
 
+  selectedItemData;
+
   constructor(props){
     super(props);
 
@@ -18,7 +20,7 @@ class SearchInput extends React.Component{
     this.removeActive = this.removeActive.bind(this);
   }
 
-  inputHandler(event){
+  async inputHandler(event){
     const value = event.target.value
     this.closeLists();
     if(value && value.length > 1){
@@ -29,16 +31,15 @@ class SearchInput extends React.Component{
       elementAutocomlpleteList.setAttribute('id', role + '__autocomplete-list');
       elementAutocomlpleteList.setAttribute("class", "autocomplete__items");
       parentNode.appendChild(elementAutocomlpleteList);
-      const listItems = this.getAutocompleteItems(value);
-      
+      const listItems = await this.getAutocompleteItems(value);
       listItems.forEach((item)=>{
         const elementAutocomlpleteListItem = document.createElement('div');
         elementAutocomlpleteListItem.setAttribute("class", "autocomplete__item");
-        elementAutocomlpleteListItem.innerHTML = `<strong>${item.substr(0, value.length)}</strong>`;
-        elementAutocomlpleteListItem.innerHTML += item.substr(value.length);
-        elementAutocomlpleteListItem.innerHTML += `<input type="hidden" value="${item}" />`;
+        elementAutocomlpleteListItem.innerHTML = `${item.name}`;
+        elementAutocomlpleteListItem.innerHTML += `<input type="hidden" value="${item.name}" />`;
         elementAutocomlpleteListItem.addEventListener("click", (selectedItem)=>{
           event.target.value = selectedItem.target.getElementsByTagName('input')[0].value;
+          this.selectedItemData = item;
           this.closeLists();
         });
         elementAutocomlpleteList.appendChild(elementAutocomlpleteListItem);
@@ -57,11 +58,10 @@ class SearchInput extends React.Component{
     const role = event.target.dataset.role;
     const locator = `#${role}__autocomplete-list .autocomplete__item`;
     const elementsList = document.querySelectorAll(locator);
-    
+    if(!elementsList || !elementsList.length) return;
     if(event.keyCode == 40){
       // arrow DOWN
       this.currentFocus++;
-      console.log(elementsList)
       this.addActive(elementsList);
     } else if(event.keyCode == 38){
       // arrow UP
@@ -101,7 +101,18 @@ class SearchInput extends React.Component{
     })
   }
 
-  getAutocompleteItems(value){
+  async getAutocompleteItems(searchTerm, resultsNumber=6){
+    const url = new URL("https://www.rentalcars.com/FTSAutocomplete.do");
+    url.searchParams.append('solrIndex', 'fts_en');
+    url.searchParams.append('solrRows', resultsNumber);
+    url.searchParams.append('solrTerm', searchTerm);
+    const response = await fetch(url);
+    const data = await response.json();
+    console.log(data);
+    return data.results.docs;
+  }
+
+  getAutocompleteItems1(value){
     const autocompleteValues = ['qdrw', 'qdas', 'qdrw1'];
     return autocompleteValues.filter(item=>item.substr(0, value.length).toLowerCase() === value.toLowerCase());
   }
@@ -114,10 +125,12 @@ class SearchInput extends React.Component{
           className="pick-up-location__input"
           onInput={this.inputHandler}
           onKeyDown={this.keydownHandler}
-          // onBlur={this.closeLists}
+          onBlur={this.closeLists}
           type="search" 
           placeholder={this.placeholder}
+          aria-describedby="pick-up-location-input__autocomplete-list"
         />
+
       </div>
     );
   }
