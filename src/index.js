@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-
+//todo: use this class to display suggestion item
 class SearchListItem extends React.Component {
   constructor(props){
     super(props);
@@ -22,7 +22,7 @@ class SearchListItem extends React.Component {
     )
   }
 }
-
+//todo: use this class to display suggestions
 class SearchList extends React.Component {
   constructor(props){
     super(props);
@@ -67,14 +67,17 @@ class SearchInput extends React.Component{
 
     this.inputHandler = this.inputHandler.bind(this);
     this.keydownHandler = this.keydownHandler.bind(this);
-    this.getAutocompleteItems = this.getAutocompleteItems.bind(this);
     this.closeLists = this.closeLists.bind(this);
     this.addActive = this.addActive.bind(this);
     this.removeActive = this.removeActive.bind(this);
     this.createList = this.createList.bind(this);
     this.createListItem = this.createListItem.bind(this);
   }
-
+  /**
+   * Handles `input` event of the search element
+   * Creates a list of suggestions
+   * @param event 
+   */
   async inputHandler(event){
     const value = event.target.value
     this.closeLists();
@@ -86,8 +89,14 @@ class SearchInput extends React.Component{
       parentNode.appendChild(this.createList(role, listItems, event));
     }
   }
-
-  createList(idPrefix, items = [], elementInput){
+  /**
+   * Creates a list for the passed items
+   * @param idPrefix reqired in case of several inputs on a page
+   * @param items list of items to be displayed
+   * @param elementInput the input element to set selected value
+   * @returns 
+   */
+  createList(idPrefix = 'input', items = [], elementInput){
     const list = document.createElement('ul');
     list.setAttribute('id', idPrefix+'__autocomplete-list');
     list.setAttribute("class", "autocomplete__items");
@@ -103,7 +112,13 @@ class SearchInput extends React.Component{
     })
     return list;
   }
-
+  /**
+   * Creates `li` element for the current item
+   * Addes the passed callback to its `click` event
+   * @param item 
+   * @param onClick 
+   * @returns "<li>" element
+   */
   createListItem(item, onClick){
     const listItem = document.createElement('li');
     listItem.setAttribute('role', 'option');
@@ -113,7 +128,9 @@ class SearchInput extends React.Component{
     listItem.addEventListener('click', onClick);
     return listItem;
   }
-
+  /**
+   * Closes all lists on the page
+   */
   closeLists(){
     const autocompleteItems = document.getElementsByClassName('autocomplete__items');
     console.log(autocompleteItems);
@@ -121,7 +138,12 @@ class SearchInput extends React.Component{
       input.parentNode.removeChild(input)
     });
   }
-
+  /**
+   * Handles events keypress `DOWN`, `UP` and `ENTER`
+   * updates the currentFocus for list items
+   * @param {*} event 
+   * @returns 
+   */
   keydownHandler(event){
     const role = event.target.dataset.role;
     const locator = `#${role}__autocomplete-list .autocomplete__item`;
@@ -137,7 +159,7 @@ class SearchInput extends React.Component{
       this.addActive(elementsList);
     } else if(event.keyCode === 13){
       // Enter
-      // event.preventDefault(); // required for forms
+      event.preventDefault(); // to prevent sending forms
       if(this.currentFocus > -1 && elementsList){
         elementsList[this.currentFocus].click();
       }
@@ -153,7 +175,7 @@ class SearchInput extends React.Component{
     this.removeActive(elementsList);
     if(this.currentFocus >= elementsList.length){
       this.currentFocus = 0;
-    } 
+    }
     if(this.currentFocus < 0) {
       this.currentFocus = elementsList.length -1;
     }
