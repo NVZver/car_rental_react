@@ -8,10 +8,11 @@ Searching for a location with hepl of autocompletion/autosuggestion
 1. [done] Implement UI component with basic functionality: autocompletion without calling API.
 2. [done] Make the UI component accessible: screen-readers, keyboard navigation.
 3. [done] Use external API to fetch data for autocompletion.
-4. [in_progress] Adjust visual part to meet assessment reqeirenments.
-5. [in_progress] Breack down the main component to React components.
-6. [to_do] Cover functionalily with unit-tests
-7. [to_do] Cover API calling, keyboard navigation with e2e tests
+4. [done] Add debounce time to reduce the amount of API requests.
+5. [in_progress] Adjust visual part to meet assessment reqeirenments.
+6. [in_progress] Breack down the main component to React components.
+7. [to_do] Cover functionalily with unit-tests
+8. [to_do] Cover API calling, keyboard navigation with e2e tests
 
 ## Known issues
 1. if you type fast it happens when more than 1 list of suggestions is displayed. Fix - #6 from the roadmap
