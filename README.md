@@ -9,7 +9,7 @@ Searchiong for a location with hepl of autocompletion/autosuggestion
 2. [done] Make the UI component accessible: screen-readers, keyboard navigation.
 3. [done] Use external API to fetch data for autocompletion.
 4. [in_progress] Adjust visual part to meet assessment reqeirenments.
-5. [to_do] Breack down the main component to React components.
+5. [in_progress] Breack down the main component to React components.
 6. [to_do] Cover functionalily with unit-tests
 7. [to_do] Cover API calling, keyboard navigation with e2e tests
 
