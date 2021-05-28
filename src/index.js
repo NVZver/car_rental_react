@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Subject } from 'rxjs/';
+import { debounceTime, takeUntil, filter } from 'rxjs/operators';
 import './index.css';
+
 //todo: use this class to display suggestion item
 class SearchListItem extends React.Component {
   constructor(props){
@@ -65,50 +68,74 @@ class SearchInput extends React.Component{
   constructor(props){
     super(props);
 
-    this.inputHandler = this.inputHandler.bind(this);
-    this.keydownHandler = this.keydownHandler.bind(this);
+    this.state = {
+      inputValue: '',
+    }
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleChange$ = new Subject();
+    this.gc$ = new Subject();
+    this.handleKeyDown = this.handleKeyDown.bind(this);
     this.closeLists = this.closeLists.bind(this);
     this.addActive = this.addActive.bind(this);
     this.removeActive = this.removeActive.bind(this);
     this.createList = this.createList.bind(this);
     this.createListItem = this.createListItem.bind(this);
+    this.selectItem = this.selectItem.bind(this);
+    this.craeteSuggestions = this.craeteSuggestions.bind(this);
+
+  }
+
+  componentDidMount(){
+    this.subscription = this.handleChange$.pipe(
+      takeUntil(this.gc$),
+      filter(({inputValue}) => inputValue.length > 1 ),
+      debounceTime(300),
+    ).subscribe(({inputValue, elementInput})=>{
+      this.currentFocus = -1;
+      this.craeteSuggestions(inputValue, elementInput);
+    })
+  }
+
+  async craeteSuggestions(searchTerm, elementInput){
+    const role = elementInput.dataset.role;
+    const parentNode = elementInput.parentNode;
+    const listItems = await this.getAutocompleteItems(searchTerm);
+    parentNode.appendChild(this.createList(role, listItems));
+  }
+
+  componentWillUnmount(){
+    if(this.gc$){
+      this.gc$.next();
+      this.gc$.complete();
+    }
   }
   /**
    * Handles `input` event of the search element
    * Creates a list of suggestions
    * @param event 
    */
-  async inputHandler(event){
-    const value = event.target.value
+  handleChange(event){
+    const inputValue = event.target.value
     this.closeLists();
-    if(value && value.length > 1){
-      const role = event.target.dataset.role;
-      const parentNode = event.target.parentNode;
-      this.currentFocus = -1;
-      const listItems = await this.getAutocompleteItems(value);
-      parentNode.appendChild(this.createList(role, listItems, event));
-    }
+    this.setState({inputValue});
+    this.handleChange$.next({inputValue, elementInput: event.target});
+
   }
   /**
    * Creates a list for the passed items
    * @param idPrefix reqired in case of several inputs on a page
    * @param items list of items to be displayed
-   * @param elementInput the input element to set selected value
    * @returns 
    */
-  createList(idPrefix = 'input', items = [], elementInput){
+  createList(idPrefix = 'input', items = []){
     const list = document.createElement('ul');
     list.setAttribute('id', idPrefix+'__autocomplete-list');
     list.setAttribute("class", "autocomplete__items");
     list.setAttribute("role", "listbox");
 
     items.forEach(item=>{
-      const onItemClick = (selectedItem)=>{
-        elementInput.target.value = selectedItem.target.getElementsByTagName('input')[0].value;
-        this.selectedItemData = item;
-        this.closeLists();
-      };
-      list.appendChild(this.createListItem(item, onItemClick));
+      list.appendChild(this.createListItem(item));
     })
     return list;
   }
@@ -119,21 +146,58 @@ class SearchInput extends React.Component{
    * @param onClick 
    * @returns "<li>" element
    */
-  createListItem(item, onClick){
+  createListItem(item){
+
     const listItem = document.createElement('li');
     listItem.setAttribute('role', 'option');
     listItem.setAttribute('class', 'autocomplete__item');
-    listItem.innerHTML = `${item.name}`;
-    listItem.innerHTML += `<input type="hidden" value="${item.name}" />`;
-    listItem.addEventListener('click', onClick);
+    if(item.bookingId) {
+      const type = this.getType(item.bookingId);
+      const data = this.getData(item);
+      listItem.innerHTML = `
+        <div class="autocomplete__item-type autocomplete__item-type--${type}">
+          ${type}
+        </div>
+        <div class="autocomplete__item-data">
+          <div class="autocomplete__item-name">${item.name}</div>
+          <div class="autocomplete__item-location">
+            ${data}
+          </div>
+        </div>
+      `;
+      listItem.addEventListener('click', ()=>{this.selectItem(item)});
+    } else {
+      console.log('no results: ', item);
+      listItem.innerHTML = `
+        <span>${item.name}</span>
+      `;
+    }
     return listItem;
+  }
+
+  selectItem(item){
+    const inputValue = this.getData(item);
+    console.log('select item: ', inputValue);
+    this.setState({inputValue});
+    this.closeLists();
+  }
+
+  getType(bookingId){
+    return bookingId.split('-')[0];
+  }
+
+  getData(item){
+    let data = '';
+    if(item.name || item.city) data += `${ item.name || item.city}, `;
+    if(item.region) data += `${item.region}, `;
+    if(item.country) data += `${item.country}`;
+    return data;
   }
   /**
    * Closes all lists on the page
    */
   closeLists(){
     const autocompleteItems = document.getElementsByClassName('autocomplete__items');
-    console.log(autocompleteItems);
     [].forEach.call(autocompleteItems, input=>{
       input.parentNode.removeChild(input)
     });
@@ -144,7 +208,7 @@ class SearchInput extends React.Component{
    * @param {*} event 
    * @returns 
    */
-  keydownHandler(event){
+  handleKeyDown(event){
     const role = event.target.dataset.role;
     const locator = `#${role}__autocomplete-list .autocomplete__item`;
     const elementsList = document.querySelectorAll(locator);
@@ -209,9 +273,10 @@ class SearchInput extends React.Component{
         <input
           data-role="pick-up-location-input"
           className="pick-up-location__input"
-          onInput={this.inputHandler}
-          onKeyDown={this.keydownHandler}
-          onBlur={this.closeLists}
+          value={this.state.inputValue}
+          onChange={this.handleChange}
+          onKeyDown={this.handleKeyDown}
+          // onBlur={this.closeLists}
           type="search" 
           placeholder={this.placeholder}
           aria-describedby="pick-up-location-input__autocomplete-list"
@@ -221,7 +286,6 @@ class SearchInput extends React.Component{
           aria-owns="pick-up-location-input__autocomplete-list"
           aria-activedescendant="selected_option"
         />
-
       </div>
     );
   }

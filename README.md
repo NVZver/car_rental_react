@@ -2,7 +2,7 @@
 
 ## Main features
 
-Searchiong for a location with hepl of autocompletion/autosuggestion
+Searching for a location with hepl of autocompletion/autosuggestion
 
 ## Roadmap
 1. [done] Implement UI component with basic functionality: autocompletion without calling API.
